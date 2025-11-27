@@ -1877,7 +1877,6 @@ The usage of each pin is as follows.
       if (board == 0 || board == board_t::board_M5StickS3)
       {
         gpio::pin_backup_t backup_pins[] = { GPIO_NUM_21, GPIO_NUM_39, GPIO_NUM_40, GPIO_NUM_41, GPIO_NUM_45, GPIO_NUM_47, GPIO_NUM_48 };
-
         auto result = lgfx::gpio::command(
           (const uint8_t[]) {
           lgfx::gpio::command_mode_input_pulldown, GPIO_NUM_47,
@@ -1888,7 +1887,6 @@ The usage of each pin is as follows.
           }
         );
         if (result == 0x03) {
-
           _pin_reset(GPIO_NUM_21, use_reset); // LCD RST
           bus_cfg.pin_mosi = GPIO_NUM_39;
           bus_cfg.pin_miso = (gpio_num_t)-1; //GPIO_NUM_NC;
@@ -1918,7 +1916,6 @@ The usage of each pin is as follows.
               cfg.panel_height = 240;
               cfg.offset_x     = 52;
               cfg.offset_y     = 40;
-              cfg.offset_rotation = 2;
               cfg.readable = true;
               cfg.invert = true;
               cfg.bus_shared = false;
@@ -2389,6 +2386,7 @@ init_clear:
     case board_M5StickC:       title = "M5StickC";       break;
     case board_M5StickCPlus:   title = "M5StickCPlus";   break;
     case board_M5StickCPlus2:  title = "M5StickCPlus2";  break;
+    case board_M5StickS3:      title = "M5StickS3";      break;
     case board_M5StackCoreInk: title = "M5StackCoreInk"; break;
     case board_M5Paper:        title = "M5Paper";        break;
     case board_M5PaperS3:      title = "M5PaperS3";      break;
@@ -2447,6 +2445,7 @@ init_clear:
 
     case board_M5StickCPlus:
     case board_M5StickCPlus2:
+    case board_M5StickS3:
     case board_M5DinMeter:
     case board_M5StampPLC:
     case board_ArduinoNessoN1:
