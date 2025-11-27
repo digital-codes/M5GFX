@@ -63,7 +63,8 @@ namespace lgfx
           CMD_VDVVRHEN,2, 0x01, 0xFF,
           CMD_VRHS   , 1, 0x10,      // voltage VRHS
           CMD_VDVSET , 1, 0x20,
-          CMD_FRCTR2,  1, 0x00,      // 0x00=119Hz
+// 2025/11/27 Commented out because it was confirmed that there are models with different FRCTRL2 specifications (M5StickCPlus)
+//        CMD_FRCTR2,  1, 0x00,      // 0x00=119Hz
           CMD_PWCTRL1, 2, 0xa4, 0xa1,
           CMD_RAMCTRL, 2, 0x00, 0xC0,
           //--------------------------------ST7789V gamma setting---------------------------------------//
