@@ -1541,31 +1541,56 @@ namespace m5gfx
         bus_spi->config(bus_cfg);
         bus_spi->init();
         id = _read_panel_id(bus_spi, GPIO_NUM_15);
-        if ((id & 0xFFFFFF) == 0x079100)
-        {  //  check panel (GC9107)
+        bool is_st7735 = (id & 0xFF) == 0x7c;
+        bool is_gc9107 = (id & 0xFFFFFF) == 0x079100;
+
+        if (is_st7735 || is_gc9107)
+        {
           board = board_t::board_M5AtomS3;
-          ESP_LOGI(LIBRARY_NAME, "[Autodetect] board_M5AtomS3");
           bus_spi->release();
           bus_cfg.spi_host = SPI3_HOST;
           bus_cfg.freq_write = 40000000;
           bus_cfg.freq_read  = 16000000;
           bus_spi->config(bus_cfg);
           bus_spi->init();
-          auto p = new Panel_GC9107();
-          p->bus(bus_spi);
+          if (is_st7735) {
+            ESP_LOGI(LIBRARY_NAME, "[Autodetect] board_M5AtomS3 (ST7735)");
+            auto p = new lgfx::Panel_ST7735S();
+            p->bus(bus_spi);
+            {
+              auto cfg = p->config();
+              cfg.pin_cs  = GPIO_NUM_15;
+              cfg.pin_rst = GPIO_NUM_34;
+              cfg.panel_width = 128;
+              cfg.panel_height = 128;
+              cfg.offset_x = 2;
+              cfg.offset_y = 31;
+              cfg.offset_rotation = 2;
+              cfg.readable = true;
+              cfg.bus_shared = false;
+              cfg.invert = true;
+              p->config(cfg);
+            }
+            _panel_last.reset(p);
+          } else // if (is_gc9107)
           {
-            auto cfg = p->config();
-            cfg.pin_cs  = GPIO_NUM_15;
-            cfg.pin_rst = GPIO_NUM_34;
-            cfg.panel_width = 128;
-            cfg.panel_height = 128;
-            cfg.offset_y = 32;
-            cfg.readable = false;
-            p->config(cfg);
+            ESP_LOGI(LIBRARY_NAME, "[Autodetect] board_M5AtomS3 (GC9107)");
+            auto p = new Panel_GC9107();
+            p->bus(bus_spi);
+            {
+              auto cfg = p->config();
+              cfg.pin_cs  = GPIO_NUM_15;
+              cfg.pin_rst = GPIO_NUM_34;
+              cfg.panel_width = 128;
+              cfg.panel_height = 128;
+              cfg.offset_y = 32;
+              cfg.readable = false;
+              cfg.bus_shared = false;
+              p->config(cfg);
+            }
+            _panel_last.reset(p);
           }
-          _panel_last.reset(p);
           _set_pwm_backlight(GPIO_NUM_16, 7, 256, false, 48);
-
           goto init_clear;
         }
         bus_spi->release();
