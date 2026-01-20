@@ -1937,33 +1937,37 @@ The usage of each pin is as follows.
           lgfx::gpio::command_end
           }
         );
-        if (result == 0x03) {
-          // LCD RST
-          _pin_reset(GPIO_NUM_21, use_reset); 
-          bus_cfg.pin_mosi = GPIO_NUM_39;
-          bus_cfg.pin_miso = GPIO_NUM_NC;
-          bus_cfg.pin_sclk = GPIO_NUM_40;
-          bus_cfg.pin_dc   = GPIO_NUM_45;
-          bus_cfg.spi_mode = 0;
-          bus_cfg.spi_3wire = true;
-          bus_spi->config(bus_cfg);
-          bus_spi->init();
-          id = _read_panel_id(bus_spi, GPIO_NUM_41);
-          if ((id & 0xFB) == 0x81) // 0x81 or 0x85
-          { //  check panel (ST7789)
+        if (result == 0x03) { // scl & sda pull-up
+          static constexpr uint8_t m5pm1_i2c_addr = 0x6E; // M5PM1 device i2c address
+          int i2c_speed = 100000;
+          lgfx::i2c::init(I2C_NUM_1, GPIO_NUM_47, GPIO_NUM_48); // SDA, SCL
+          auto chk_pm1 = lgfx::i2c::readRegister8(I2C_NUM_1, m5pm1_i2c_addr, 0x00, i2c_speed); // Try to read M5PM1 device id
+          if (chk_pm1.has_value()) {
             ESP_LOGI(LIBRARY_NAME, "[Autodetect] board_M5StickS3");
-            board = board_t::board_M5StickS3;
-            static constexpr uint8_t m5_pm1_i2c_addr = 0x6E;
-            lgfx::i2c::init(I2C_NUM_1, GPIO_NUM_47, GPIO_NUM_48);
+            board = board_t::board_M5StickS3;     
 
-            int i2c_speed = 100000;
+            // PM1_G2 -- L3B Enable, LCD Power On (M5Stack PM1 G2)
+            lgfx::i2c::bitOff(I2C_NUM_1, m5pm1_i2c_addr, 0x16, 1 << 2, i2c_speed); // Set pin gpio2 as gpio function
+            lgfx::i2c::bitOn(I2C_NUM_1, m5pm1_i2c_addr, 0x10, 1 << 2, i2c_speed);  // Set pin gpio2 mode: output
+            lgfx::i2c::bitOff(I2C_NUM_1, m5pm1_i2c_addr, 0x13, 1 << 2, i2c_speed); // Set gpio2 push-pull mode: reg:0x13
+            lgfx::i2c::bitOn(I2C_NUM_1, m5pm1_i2c_addr, 0x11, 1 << 2, i2c_speed);  // Set gpio2 output high: reg:0x05
+            // reg: 0x09(I2C_CFG) - Set to 0x00 to disable I2C idle sleep mode.
+            // PMIC is always-on powered, and with battery power, shutdown doesn't reset the chip.
+            // This register may have been modified elsewhere, causing PMIC communication issues.
+            // Explicitly set it here during initialization to ensure proper operation.
+            lgfx::i2c::writeRegister8(I2C_NUM_1, m5pm1_i2c_addr, 0x09, 0x00, i2c_speed);
+            lgfx::delay(100);
 
-            // L3B Enable, LCD Power On (M5Stack PM1 G2)
-            lgfx::i2c::bitOff(I2C_NUM_1, m5_pm1_i2c_addr, 0x16, 1 << 2, i2c_speed); // Set pin gpio2 as gpio function
-            lgfx::i2c::bitOn(I2C_NUM_1, m5_pm1_i2c_addr, 0x10, 1 << 2, i2c_speed);  // Set pin gpio2 mode: output
-            lgfx::i2c::bitOff(I2C_NUM_1, m5_pm1_i2c_addr, 0x13, 1 << 2, i2c_speed); // Set gpio2 push-pull mode: reg:0x13
-            lgfx::i2c::bitOn(I2C_NUM_1, m5_pm1_i2c_addr, 0x11, 1 << 2, i2c_speed);  // Set gpio2 output high: reg:0x05
-
+            // LCD RST
+            _pin_reset(GPIO_NUM_21, use_reset); 
+            bus_cfg.pin_mosi = GPIO_NUM_39;
+            bus_cfg.pin_miso = GPIO_NUM_NC;
+            bus_cfg.pin_sclk = GPIO_NUM_40;
+            bus_cfg.pin_dc   = GPIO_NUM_45;
+            bus_cfg.spi_mode = 0;
+            bus_cfg.spi_3wire = true;
+            bus_spi->config(bus_cfg);
+            bus_spi->init();
             lgfx::delay(100);
 
             bus_spi->release();
@@ -1991,7 +1995,7 @@ The usage of each pin is as follows.
             _set_pwm_backlight(GPIO_NUM_38, 7, 256, false, 16);
             goto init_clear;
           }
-          bus_spi->release();
+          lgfx::i2c::release(I2C_NUM_1);
         }
         for (auto pin: backup_pins) { pin.restore(); }
       }
