@@ -21,7 +21,7 @@
 #include "lgfx/v1/panel/Panel_GDEW0154M09.hpp"
 #include "lgfx/v1/panel/Panel_GDEW0154D67.hpp"
 #include "lgfx/v1/panel/Panel_IT8951.hpp"
-#include "lgfx/v1/touch/Touch_CST816S.hpp"
+#include "lgfx/v1/touch/Touch_CSTxxx.hpp"
 #include "lgfx/v1/touch/Touch_FT5x06.hpp"
 #include "lgfx/v1/touch/Touch_GT911.hpp"
 
